@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Job Prep & Interview Coaching Chatbot</title>
+  <style>
+    /* Background animation */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #222;
+    }
+
+    #app {
+      background: #fff;
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Chat area */
+    #chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid #eee;
+      background: #fafafa;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message {
+      max-width: 75%;
+      margin: 8px 0;
+      padding: 10px 14px;
+      border-radius: 15px;
+      white-space: pre-line;
+      word-wrap: break-word;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .bot {
+      background: #dbeafe;
+      color: #084298;
+      align-self: flex-start;
+      border-bottom-left-radius: 0;
+      position: relative;
+    }
+
+    .user {
+      background: #c8e6c9;
+      color: #2e7d32;
+      align-self: flex-end;
+      border-bottom-right-radius: 0;
+    }
+
+    #input-area {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+      background: white;
+    }
+
+    #input-area input {
+      flex: 1;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      padding: 10px 20px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    #input-area input:focus {
+      border-color: #6b73ff;
+    }
+
+    #input-area button {
+      margin-left: 10px;
+      background: #6b73ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0 20px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #input-area button:hover {
+      background: #4a54e1;
+    }
+
+    /* Resume builder area */
+    #resume-builder {
+      width: 350px;
+      background: #fff;
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+
+    #resume-builder h2 {
+      margin-top: 0;
+      color: #6b73ff;
+      text-align: center;
+    }
+
+    #resume-builder label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    #resume-builder input,
+    #resume-builder textarea,
+    #resume-builder select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    #resume-builder button {
+      margin-top: 20px;
+      width: 100%;
+      background: #6b73ff;
+      color: white;
+      font-weight: 700;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    #resume-builder button:hover {
+      background: #4a54e1;
+    }
+
+    /* Resume output */
+    #resume-output {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 10px;
+      background: #f9f9f9;
+      font-family: 'Times New Roman', serif;
+      white-space: pre-wrap;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* Typing animation */
+    .typing {
+      border-right: 2px solid #666;
+      animation: blinkCaret 0.75s step-end infinite;
+    }
+
+    @keyframes blinkCaret {
+      from, to {
+        border-color: transparent;
+      }
+      50% {
+        border-color: #666;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+
+    /* Scrollbar */
+    #chat-box::-webkit-scrollbar,
+    #resume-builder::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #chat-box::-webkit-scrollbar-thumb,
+    #resume-builder::-webkit-scrollbar-thumb {
+      background-color: #6b73ff;
+      border-radius: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Chatbot area -->
+    <div id="chat-container">
+      <div id="chat-box"></div>
+      <div id="input-area">
+        <input id="user-input" type="text" placeholder="Ask me about mock interviews, HR, or resume tips..." autocomplete="off" />
+        <button onclick="handleUserMessage()">Send</button>
+      </div>
+    </div>
+
+    <!-- Resume builder area -->
+    <div id="resume-builder">
+      <h2>Resume Builder</h2>
+      <form id="resume-form">
+        <label for="fullName">Full Name</label>
+        <input id="fullName" name="fullName" type="text" placeholder="John Doe" required />
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="john@example.com" required />
+
+        <label for="phone">Phone Number</label>
+        <input id="phone" name="phone" type="tel" placeholder="+1 234 567 890" />
+
+        <label for="summary">Professional Summary</label>
+        <textarea id="summary" name="summary" rows="3" placeholder="Brief summary about yourself" required></textarea>
+
+        <label for="skills">Skills (comma separated)</label>
+        <input id="skills" name="skills" placeholder="JavaScript, Python, Communication" required />
+
+        <label for="experience">Work Experience</label>
+        <textarea id="experience" name="experience" rows="4" placeholder="Describe your past jobs and achievements" required></textarea>
+
+        <label for="education">Education</label>
+        <textarea id="education" name="education" rows="3" placeholder="Your degrees and schools" required></textarea>
+
+        <label for="template">Choose Resume Template</label>
+        <select id="template" name="template">
+          <option value="template1">Classic Blue</option>
+          <option value="template2">Modern Green</option>
+          <option value="template3">Minimal Black</option>
+        </select>
+
+        <button type="submit">Generate Resume</button>
+      </form>
+
+      <div id="resume-output" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const resumeForm = document.getElementById('resume-form');
+    const resumeOutput = document.getElementById('resume-output');
+
+    // Data for chatbot Q&A
+    const mockInterviewQA = [
+      {
+        q: "Tell me about yourself.",
+        a: "I'm a dedicated professional with experience in software development and a passion for continuous learning."
+      },
+      {
+        q: "Why should we hire you?",
+        a: "I bring strong problem-solving skills, a positive attitude, and the ability to work well in teams."
+      },
+      {
+        q: "What are your strengths?",
+        a: "I am very organized, a quick learner, and able to handle multiple tasks efficiently."
+      }
+    ];
+
+    const hrQuestions = [
+      {
+        q: "How do you handle conflict at work?",
+        a: "I stay calm, listen to all parties, and try to find a mutually beneficial solution."
+      },
+      {
+        q: "Where do you see yourself in 5 years?",
+        a: "I hope to grow professionally, taking on new challenges and leadership roles."
+      }
+    ];
+
+    const resumeTips = [
+      "Tailor your resume for each job application.",
+      "Use action verbs to describe your achievements.",
+      "Keep your resume concise and focused on relevant experience.",
+      "Quantify your accomplishments whenever possible.",
+      "Proofread to avoid spelling or grammar errors."
+    ];
+
+    // Chatbot utility functions
+    function appendMessage(text, sender, isTyping = false) {
+      const msg = document.createElement('div');
+      msg.classList.add('message', sender);
+      if (isTyping) {
+        msg.classList.add('typing');
+      }
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msg;
+    }
+
+    function clearTyping() {
+      const typingEls = document.querySelectorAll('.typing');
+      typingEls.forEach(el => el.classList.remove('typing'));
+    }
+
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Typing animation function
+    async function typeText(messageEl, text) {
+      messageEl.textContent = "";
+      for (let i = 0; i < text.length; i++) {
+        messageEl.textContent += text.charAt(i);
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      messageEl.classList.remove('typing');
+      speak(text);
+    }
+
+    // Chatbot response logic
+    async function botResponse(input) {
+      input = input.toLowerCase();
+
+      // Check mock interview questions
+      for (let item of mockInterviewQA) {
+        if (input.includes(item.q.toLowerCase().split(' ')[0])) {
+          return item.a;
+        }
+      }
+
+      // Check HR questions
+      for (let item of hrQuestions) {
+        if (input.includes(item.q.toLowerCase().split(' ')[0])) {
+          return item.a;
+        }
+      }
+
+      // Resume tips
+      if (input.includes('resume tip') || input.includes('resume advice') || input.includes('resume')) {
+        return "Here are some resume tips:\n- " + resumeTips.join('\n- ');
+      }
+
+      // Mock interview Q&A
+      if (input.includes('mock interview') || input.includes('interview question') || input.includes('interview')) {
+        const randomQA = mockInterviewQA[Math.floor(Math.random() * mockInterviewQA.length)];
+        return Q: ${randomQA.q}\nA: ${randomQA.a};
+      }
+
+      // HR questions
+      if (input.includes('hr question') || input.includes('human resource') || input.includes('hr')) {
+        const randomHR = hrQuestions[Math.floor(Math.random() * hrQuestions.length)];
+        return Q: ${randomHR.q}\nA: ${randomHR.a};
+      }
+
+      // Greetings
+      if (input.includes('hello') || input.includes('hi') || input.includes('hey')) {
+        return "Hi! I'm your job coach bot. Ask me anything about interviews, HR, or resume building!";
+      }
+
+      // Thanks
+      if (input.includes('thank')) {
+        return "You're welcome! Happy to help.";
+      }
+
+      return "Sorry, I didn't understand that. Try asking about mock interviews, HR questions, or resume tips.";
+    }
+
+    // Handle user sending message
+    async function handleUserMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+      appendMessage(text, 'user');
+      userInput.value = '';
+      // Show typing message from bot
+      const botMsg = appendMessage('', 'bot', true);
+      const response = await botResponse(text);
+      await typeText(botMsg, response);
+    }
+
+    // Resume builder
+    resumeForm.addEventListener('submit', e => {
+      e.preventDefault();
+
+      const data = new FormData(resumeForm);
+      const fullName = data.get('fullName');
+      const email = data.get('email');
+      const phone = data.get('phone') || 'N/A';
+      const summary = data.get('summary');
+      const skills = data.get('skills').split(',').map(s => s.trim());
+      const experience = data.get('experience');
+      const education = data.get('education');
+      const template = data.get('template');
+
+      // Build resume text
+      let resumeText = --- Resume (${fullName}) ---\n\n;
+      resumeText += Contact:\nEmail: ${email}\nPhone: ${phone}\n\n;
+      resumeText += Professional Summary:\n${summary}\n\n;
+      resumeText += Skills:\n- ${skills.join('\n- ')}\n\n;
+      resumeText += Work Experience:\n${experience}\n\n;
+      resumeText += Education:\n${education}\n\n;
+
+      // Apply simple template styles
+      let styledResume = '';
+
+      if (template === 'template1') {
+        styledResume = `<div style="color:#084298; font-family: Arial, sans-serif;">
+          <h2 style="border-bottom: 2px solid #6b73ff;">${fullName}</h2>
+          <p><b>Email:</b> ${email} | <b>Phone:</b> ${phone}</p>
+          <h3>Professional Summary</h3><p>${summary}</p>
+          <h3>Skills</h3><ul>${skills.map(s => <li>${s}</li>).join('')}</ul>
+          <h3>Work Experience</h3><p>${experience.replace(/\n/g,'<br>')}</p>
+          <h3>Education</h3><p>${education.replace(/\n/g,'<br>')}</p>
+        </div>`;
+      } else if (template === 'template2') {
+        styledResume = `<div style="color:#2e7d32; font-family: 'Segoe UI', Tahoma;">
+          <h1>${fullName}</h1>
+          <p><i>${email} | ${phone}</i></p>
+          <h2>Summary</h2><p>${summary}</p>
+          <h2>Skills</h2><p>${skills.join(', ')}</p>
+          <h2>Experience</h2><p>${experience.replace(/\n/g,'<br>')}</p>
+          <h2>Education</h2><p>${education.replace(/\n/g,'<br>')}</p>
+        </div>`;
+      } else {
+        styledResume = `<div style="color:#222; font-family: Georgia, serif;">
+          <h2>${fullName}</h2>
+          <p>${email} | ${phone}</p>
+          <hr>
+          <h3>Summary</h3><p>${summary}</p>
+          <h3>Skills</h3><p>${skills.join(', ')}</p>
+          <h3>Experience</h3><p>${experience.replace(/\n/g,'<br>')}</p>
+          <h3>Education</h3><p>${education.replace(/\n/g,'<br>')}</p>
+        </div>`;
+      }
+
+      resumeOutput.innerHTML = styledResume;
+      resumeOutput.style.display = 'block';
+    });
+
+    // Welcome message
+    window.onload = () => {
+      appendMessage("Hello! I'm your Job Prep & Interview Coach bot. Ask me about mock interviews, HR questions, or resume tips!", 'bot');
+    };
+
+    // Press Enter to send message
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleUserMessage();
+      }
+    });
+
+  </script>
+</body>
+</html>
